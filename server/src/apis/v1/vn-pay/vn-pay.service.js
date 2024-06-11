@@ -16,7 +16,7 @@ class VNPayService {
     amount,
     bankCode,
     orderId,
-    message = "Thanh toán đặt phòng khách sạn. Mã giao dịch: ",
+    message = "Thanh toan dat phong khach san. Ma giao dich: ",
   }) => {
     try {
       const date = new Date();
@@ -32,39 +32,56 @@ class VNPayService {
       let vnpUrl = config.vnp.vnp_Url;
       let vnpParams = {};
 
+      const redirectUrl = new URL(vnpUrl);
+
       vnpParams["vnp_Version"] = "2.1.0";
-      vnpParams["vnp_Command"] = "pay";
       vnpParams["vnp_TmnCode"] = tmnCode;
-      vnpParams["vnp_Locale"] = location;
+      vnpParams["vnp_Amount"] = amount * 100;
+      vnpParams["vnp_Command"] = "pay";
+      vnpParams["vnp_CreateDate"] = createDate;
       vnpParams["vnp_CurrCode"] = currCode;
-      vnpParams["vnp_TxnRef"] = orderId;
+      vnpParams["vnp_IpAddr"] = ipAddr;
+      vnpParams["vnp_Locale"] = location;
       vnpParams["vnp_OrderInfo"] = message + orderId;
       vnpParams["vnp_OrderType"] = "other";
-      vnpParams["vnp_Amount"] = amount * 100;
       vnpParams["vnp_ReturnUrl"] = returnUrl;
-      vnpParams["vnp_IpAddr"] = ipAddr;
-      vnpParams["vnp_CreateDate"] = createDate;
+      vnpParams["vnp_TxnRef"] = orderId;
+      vnpParams["vnp_ExpireDate"] = +createDate + 60 * 20;
 
       if (bankCode !== null && bankCode !== "") {
         vnpParams["vnp_BankCode"] = bankCode;
       }
 
-      vnpParams = sortObject(vnpParams);
+      Object.entries(vnpParams)
+        .sort(([key1], [key2]) =>
+          key1.toString().localeCompare(key2.toString())
+        )
+        .forEach(([key, value]) => {
+          console.log({ key, value });
 
-      const signData = queryString.stringify(vnpParams, { encode: false });
+          // Skip empty value
+          if (!value || value === "" || value === undefined || value === null) {
+            return;
+          }
+
+          redirectUrl.searchParams.append(key, value.toString());
+        });
 
       const hmac = crypto.createHmac("sha512", secretKey);
 
-      const signed = hmac.update(new Buffer.from(signData, "utf-8")).digest("hex");
+      const signed = hmac
+        .update(
+          new Buffer.from(redirectUrl.search.slice(1).toString(), "utf-8")
+        )
+        .digest("hex");
 
-      vnpParams["vnp_SecureHash"] = signed;
+      redirectUrl.searchParams.append("vnp_SecureHash", signed);
 
-      vnpUrl += "?" + queryString.stringify(vnpParams, { encode: false });
+      console.log("handleCreatePaymentUrl url => ", redirectUrl.toString());
 
-      console.log("handleCreatePaymentUrl url => ", vnpUrl);
-
-      return vnpUrl;
+      return redirectUrl.toString();
     } catch (error) {
+      console.log(`error vn pay request create url:::`, error);
       throw new APIError(500, error.message);
     }
   };
@@ -85,7 +102,9 @@ class VNPayService {
 
       const hmac = crypto.createHmac("sha512", secretKey);
 
-      const signed = hmac.update(new Buffer.from(signData, "utf-8")).digest("hex");
+      const signed = hmac
+        .update(new Buffer.from(signData, "utf-8"))
+        .digest("hex");
 
       if (secureHash === signed) {
         //Kiem tra xem du lieu trong db co hop le hay khong va thong bao ket qua
@@ -114,7 +133,10 @@ class VNPayService {
         });
 
         if (!bill) {
-          throw new APIError(404, "Không tìm thấy hoá đơn " + findTransaction.bill_id);
+          throw new APIError(
+            404,
+            "Không tìm thấy hoá đơn " + findTransaction.bill_id
+          );
         }
 
         let sql = SQLString.format(
@@ -147,7 +169,10 @@ class VNPayService {
         });
 
         if (!user) {
-          throw new APIError(404, `Không tìm thấy người dùng có id ${bill.user_id}!`);
+          throw new APIError(
+            404,
+            `Không tìm thấy người dùng có id ${bill.user_id}!`
+          );
         }
 
         let roomsSend = rooms.map((room) => ({

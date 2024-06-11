@@ -103,7 +103,7 @@ export default function Register() {
           <SectionStyle>
             <Typography variant="h3" sx={{ px: 5, mt: 10, mb: 5 }}>
               {!isRegisterHotelMode
-                ? "Thồi mái lựa chọn với " + APPLICATION_NAME
+                ? "Thoải mái lựa chọn với " + APPLICATION_NAME
                 : "Đăng khách sạn của bạn trên Endcool.booking"}
             </Typography>
             <img alt="register" src="/static/illustrations/illustration_register.png" />

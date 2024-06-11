@@ -327,7 +327,7 @@ class RoomService {
       query += "JOIN statuses s ON r.status_id = s.status_id && s.value='SHOW' ";
       query += "JOIN hotels h ON r.hotel_id = h.hotel_id ";
       query += "JOIN room_types rt ON r.rt_id = rt.rt_id ";
-      query += "WHERE r.hotel_id=? AND r.avaiable = 1 ORDER BY price";
+      query += "WHERE r.hotel_id=? ORDER BY price";
 
       const sql = SqlString.format(query, [hotelId]);
 

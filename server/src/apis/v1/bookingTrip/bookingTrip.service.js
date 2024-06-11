@@ -68,6 +68,10 @@ class BookingTripService extends DBModel {
 
       const roomMinPrice = roomsFound[0];
 
+      if(!roomMinPrice) {
+        throw new APIError(400, 'Vui lòng thử lại sau!');
+      }
+
       // 2. Tính lại tổng chi phí
       const fee = {
         total_price: tripFound.trip_fee + tripFound.hotel_fee,
@@ -108,6 +112,8 @@ class BookingTripService extends DBModel {
         total_price: fee.hotel_fee,
       };
 
+
+
       const newBookingDetails = {
         bill_id: bookingTripId,
         floor_id: roomMinPrice.floor_id,
@@ -134,7 +140,7 @@ class BookingTripService extends DBModel {
           orderId: orderId,
           bankCode: "",
           amount: fee.total_price,
-          message: "Thanh toán đặt lịch trình chuyến đi. Mã giao dịch: ",
+          message: "Thanh toan dat chuyen di. Ma giao dich: ",
         }),
         this.insert({ table: "bill_details", data: newBookingDetails }),
         this.handleUpdate({

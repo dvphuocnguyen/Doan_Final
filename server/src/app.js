@@ -7,8 +7,18 @@ import morgan from "morgan";
 import config from "./config/index.js";
 import initRouteApi from "./router/index.js";
 import { APIError } from "./utils/index.js";
+import { VNPayService } from "./apis/v1/index.js";
+
+process.env.TZ = 'Asia/Ho_Chi_Minh' 
 
 const app = express();
+
+// VNPayService.handleCreatePaymentUrl({
+//   ipAddr: "127.0.0.1",
+//   amount: 50000,
+//   bankCode: "",
+//   orderId: "1111",
+// });
 
 app.use(
   cors({
